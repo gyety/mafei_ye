@@ -1,0 +1,75 @@
+查询数据库近期修改历史 dba权限
+select t.SQL_TEXT, t.FIRST_LOAD_TIME
+from v$sqlarea t
+ where t.FIRST_LOAD_TIME like '2018-04-%'
+ order by t.FIRST_LOAD_TIME desc
+
+查询重复字段
+select col_loginname,count(*) from hs_user group by col_loginname 
+having count(*)>1;
+
+开启关闭触发器
+ALTER TRIGGER TRIGGER_NAME DISBALE;
+ALTER TRIGGER TRIGGER_NAME ENABLE;
+
+查看当前数据库建立的回话情况
+select sid,serial#,username,program,machine,status from v$session;
+
+查看消耗资源最多的sql
+SELECT hash_value, executions, buffer_gets, disk_reads, parse_calls  
+FROM V$SQLAREA  
+WHERE buffer_gets > 10000000 OR disk_reads > 1000000  
+ORDER BY buffer_gets + 100 * disk_reads DESC;
+
+查询应用连接数SQL
+SELECT b.MACHINE, b.PROGRAM, COUNT (*)
+FROM v$process a, v$session b
+WHERE a.ADDR = b.PADDR AND b.USERNAME IS NOT NULL
+GROUP BY b.MACHINE, b.PROGRAM
+ORDER BY COUNT (*) DESC
+
+
+查看当前有哪些用户正在使用数据
+select osuser,a.username,cpu_time/executions/1000000||'s',sql_fulltext,machine
+from v$session a,v$sqlarea b
+where a.sql_address = b.address
+order by cpu_time/executions desc;
+
+清除用户下连接进程
+alter system kill session 'sid,serial#';
+查看锁表进程
+select b.owner,b.object_name,a.session_id,a.locked_mode from v$locked_object a,dba_objects b where b.object_id = a.object_id;
+查看锁表session,serial#
+SELECT l.session_id sid, s.serial#,l.locked_mode,o.object_name FROM v$locked_object l, all_objects o, v$session s WHERE l.object_id = o.object_id AND l.session_id = s.sid ORDER BY sid, s.serial#;
+若杀不掉则进行
+select spid, osuser, s.program from v$session s,v$process p where s.paddr=p.addr and s.sid=? //sid
+得到SPID,切到系统用户 kill 该进程
+
+查看最大连接数
+select value from v$parameter where name ='processes';
+
+修改最大连接数
+alter system set processes = 300 scope = spfile;
+当前session连接数
+select count(*) from v$session  --当前的session连接数
+
+当前并发连接数
+select count(1) from v$session where status='ACTIVE';
+
+查看当天执行时间最长的50条sql
+select * from v$sql
+select * from (select sa.SQL_TEXT,sa.SQL_FULLTEXT,sa.EXECUTIONS "执行次数",
+round(sa.ELAPSED_TIME / 1000000, 2) "总执行时间",
+round(sa.ELAPSED_TIME / 1000000 / sa.EXECUTIONS, 2) "平均执行时间",
+sa.COMMAND_TYPE,
+sa.PARSING_USER_ID "用户ID",
+u.username "用户名",
+sa.HASH_VALUE
+from v$sqlarea sa
+left join all_users u
+on sa.PARSING_USER_ID = u.user_id
+where sa.EXECUTIONS > 0 and TO_CHAR(sA.LAST_LOAD_TIME,'yyyy/mm/dd')=to_char(sysdate,'yyyy/mm/dd')
+order by (sa.ELAPSED_TIME / sa.EXECUTIONS) desc)
+where rownum <= 50;
+ 
+ 
