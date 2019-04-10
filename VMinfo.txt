@@ -25,3 +25,5 @@ jstat -gcutil pid 查看堆的监视结果
 jmap -heap pid 查看java堆的详细信息
 jmap -dump:format=b,file=xxx  pid 生成一个正在运行的dump快照
 jhat xxx 分析生成的dump快照 当现实server is ready ,可在浏览器中输入http://ip:7000查看分析结果
+
+
