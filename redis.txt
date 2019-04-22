@@ -1,0 +1,3 @@
+HyperLogLog数据结构提供不精确的去重计数方案，标准误差在0.81%。HyperLogLog提供两个指令 pfadd ,pfcount 一个是增加计数器，一个是获取计数器
+
+布隆过滤器（Bloom Filter）,布隆过滤器又两个基本指令bf.add和bf.exists; bf.add 添加元素 bf.exists查询元素是否存在
